@@ -35,7 +35,7 @@ Variabel yang dapat terdampak adalah variabel yang bukan variabel final
 
 - Final digunakan jika kita ingin mengunci nilai setelah inisialisasi namun nilainya baru ditentukan saat running program. Sedangkan, const digunakan jika nilainya benar-benar diketahui sejak awal (dari saat compile)
 
-## Langkah Implementasi Prograam (Tugas 7)
+## Langkah Implementasi Program (Tugas 7)
 
 1. Buat proyek Flutter baru dan masuk ke direktori proyek tersebut:
 
@@ -188,3 +188,217 @@ Widget build(BuildContext context) {
 ```
 
 8. Push perubahan ke github.
+
+# Tugas 8
+
+## Apa kegunaan const di Flutter? Jelaskan apa keuntungan ketika menggunakan const pada kode Flutter. Kapan sebaiknya kita menggunakan const, dan kapan sebaiknya tidak digunakan?
+
+Const digunakan untuk mendefinisikan widget/objek sebagai nilai yang tetap selama runtime aplikasi. Keuntungannya adalah penghematan memori dan meningkatkan efisiensi aplikasi sebab Flutter akan tahu bahwa objek const hanya perlu dibuat sekali dan tidak akan pernah diubah.
+Gunakan const untuk widget atau objek yang tidak berubah.
+Jangan gunakan const ketika widget atau objeknya akan berubah-ubah.
+
+## Jelaskan dan bandingkan penggunaan Column dan Row pada Flutter. Berikan contoh implementasi dari masing-masing layout widget ini!
+
+Column digunakan jika kita ingin menyusun objek-objek secara vertikal, sedangkan row untuk menyusun objek-objek secara horizontal.
+Contoh column:
+
+```
+Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Nama: $_name'),
+      Text('Harga: $_price'),
+      Text('Deskripsi: $_description'),
+      Text('Rating: $_rating')
+    ],
+  ),
+```
+
+Contoh row:
+
+```
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+    InfoCard(title: 'Nama', content: name),
+    InfoCard(title: 'Harga', content: price),
+    InfoCard(title: 'Deskripsi', content: description),
+    InfoCard(title: 'Rating', content: rating),
+  ],
+),
+```
+
+## Sebutkan apa saja elemen input yang kamu gunakan pada halaman form yang kamu buat pada tugas kali ini. Apakah terdapat elemen input Flutter lain yang tidak kamu gunakan pada tugas ini? Jelaskan!
+
+Elemen input flutter yang digunakan:
+TextFormField, ElevatedButton
+
+Elemen input flutter yang TIDAK digunakan:
+Checkbox, Switch, Slider, DatePicker, TimePicker, DropdownButton
+
+## Bagaimana cara kamu mengatur tema (theme) dalam aplikasi Flutter agar aplikasi yang dibuat konsisten? Apakah kamu mengimplementasikan tema pada aplikasi yang kamu buat?
+
+Digunakan properti theme dalam aplikasi yang mencakup warna primer, sekunder, dll. untuk mengatur konsistensi tema. Dan iya, tema sudah diimplementasikan pada aplikasi ini.
+
+## Bagaimana cara kamu menangani navigasi dalam aplikasi dengan banyak halaman pada Flutter?
+
+Menggunakan Navigator dan Drawer
+
+## Langkah Implementasi Program (Tugas 8)
+
+1. Menambahkan Drawer untuk Navigasi
+
+Buat file left_drawer.dart di dalam folder widgets pada direktori lib/.
+Tambahkan kelas LeftDrawer untuk membuat drawer navigasi, dengan opsi untuk mengarahkan pengguna ke halaman utama (MyHomePage) dan halaman formulir tambah item (CreamEntryFormPage).
+Pastikan untuk menambahkan header dengan nama aplikasi, serta ikon dan label untuk setiap opsi navigasi.
+
+```
+import 'package:flutter/material.dart';
+import 'package:toko_bing_chilling/screens/menu.dart';
+import 'package:toko_bing_chilling/creamentry_form.dart';
+
+
+class LeftDrawer extends StatelessWidget {
+  const LeftDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary),
+            child: const Column(
+              children: [
+                Text('Bing Chilling Creamery', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+                Padding(padding: EdgeInsets.all(8)),
+                Text("Where the best ice creams lie.", style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home_outlined),
+            title: const Text('Halaman Utama'),
+            onTap: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MyHomePage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('Tambah Es Krim'),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CreamEntryFormPage()));
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+2. Menambahkan Drawer ke Halaman Utama
+
+Di dalam file menu.dart, tambahkan drawer ke dalam Scaffold dari MyHomePage dengan mengimpor LeftDrawer.
+Drawer akan memberikan pengguna opsi untuk berpindah ke halaman utama atau halaman tambah item.
+
+```
+import 'package:flutter/material.dart';
+import 'package:toko_bing_chilling/widgets/left_drawer.dart';
+
+class MyHomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Bing Chilling Creamery'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+      drawer: const LeftDrawer(),
+      body: // Konten halaman utama
+    );
+  }
+}
+```
+
+3. Membuat Halaman Formulir Tambah Item Baru
+
+Buat file baru bernama creamentry_form.dart di dalam folder screens.
+Tambahkan struktur dasar halaman menggunakan Scaffold dengan AppBar dan Drawer yang sudah dibuat sebelumnya.
+
+```
+import 'package:flutter/material.dart';
+import 'package:toko_bing_chilling/widgets/left_drawer.dart';
+
+class CreamEntryFormPage extends StatefulWidget {
+const CreamEntryFormPage({super.key});
+
+    @override
+    State<CreamEntryFormPage> createState() => _CreamEntryFormPageState();
+
+}
+
+class \_CreamEntryFormPageState extends State<CreamEntryFormPage> {
+final \_formKey = GlobalKey<FormState>();
+
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Tambah Es Krim Baru')),
+        drawer: const LeftDrawer(),
+        body: Form(key: _formKey, child: // Konten form),
+      );
+    }
+
+}
+```
+
+4. Menambahkan Input Fields dan Validasi pada Formulir
+
+Tambahkan empat elemen input pada halaman CreamEntryFormPage: Name, Harga, Deskripsi, dan Rating.
+Pastikan setiap elemen input divalidasi agar tidak kosong, dan cocok dengan tipe data atributnya.
+
+```
+TextFormField(
+decoration: InputDecoration(labelText: "Name"),
+validator: (value) => value == null || value.isEmpty ? "Isian tidak boleh kosong!" : null,
+),
+// Tambahkan TextFormField untuk Harga, Deskripsi, dan Rating dengan validasi masing-masing
+```
+
+5. Menambahkan Tombol Save dan Pop-up Konfirmasi
+
+Tambahkan tombol Save yang saat ditekan akan menampilkan pop-up dengan data yang diinputkan oleh pengguna.
+
+```
+ElevatedButton(
+  onPressed: () {
+    if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Data berhasil disimpan'),
+          content: Column(children: [
+            Text('Nama: $_name'),
+            Text('Harga: $_price'),
+            Text('Deskripsi: $_description'),
+            Text('Rating: $_rating'),
+          ]),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('OK'))],
+        ),
+      );
+    }
+  },
+  child: Text("Save"),
+),
+```
+
+6. Menghubungkan Tombol "Tambah Item" pada Halaman Utama ke Form Tambah Item
+
+Pada halaman utama (menu.dart), tambahkan navigasi untuk membuka halaman CreamEntryFormPage menggunakan Navigator.push().
+
+```
+if (item.name == "Tambah Es Krim") {
+  Navigator.push(context, MaterialPageRoute(builder: (context) => CreamEntryFormPage()));
+}
+```

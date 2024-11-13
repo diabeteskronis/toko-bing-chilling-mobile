@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:toko_bing_chilling/menu.dart';
+import 'package:toko_bing_chilling/screens/menu.dart';
 
 void main() {
   runApp(const MyApp());
