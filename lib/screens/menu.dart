@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:toko_bing_chilling/widgets/left_drawer.dart';
-import 'package:toko_bing_chilling/screens/mood_card.dart';
+import 'package:toko_bing_chilling/screens/bing_card.dart';
 
 class MyHomePage extends StatelessWidget {
   final String name = 'es krim';

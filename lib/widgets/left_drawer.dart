@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toko_bing_chilling/screens/list_bingentry.dart';
 import 'package:toko_bing_chilling/screens/menu.dart';
 import 'package:toko_bing_chilling/creamentry_form.dart';
 
@@ -51,12 +52,21 @@ class LeftDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.add),
             title: const Text('Tambah Es Krim'),
-            // Bagian redirection ke MoodEntryFormPage
             onTap: () {
               Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (context) => CreamEntryFormPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.add_reaction_rounded),
+            title: const Text('Daftar Produk'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BingEntryPage()),
+              );
             },
           ),
         ],

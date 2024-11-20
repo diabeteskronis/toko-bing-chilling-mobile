@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:toko_bing_chilling/screens/menu.dart';
 import 'package:toko_bing_chilling/widgets/left_drawer.dart';
 
 class CreamEntryFormPage extends StatefulWidget {
@@ -13,10 +18,12 @@ class _CreamEntryFormPageState extends State<CreamEntryFormPage> {
   String _name = "";
   int _price = 0;
   String _description = "";
-  int _rating = 0;
+  int _icecreamrating = 0;
 
   @override
   Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Center(
@@ -118,7 +125,7 @@ class _CreamEntryFormPageState extends State<CreamEntryFormPage> {
                 ),
                 onChanged: (String? value) {
                   setState(() {
-                    _rating = int.tryParse(value!) ?? 0;
+                    _icecreamrating = int.tryParse(value!) ?? 0;
                   });
                 },
                 validator: (String? value) {
@@ -141,36 +148,38 @@ class _CreamEntryFormPageState extends State<CreamEntryFormPage> {
                     backgroundColor: WidgetStateProperty.all(
                         Theme.of(context).colorScheme.primary),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text('Es krim berhasil tersimpan'),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Nama: $_name'),
-                                  Text('Harga: $_price'),
-                                  Text('Deskripsi: $_description'),
-                                  Text('Rating: $_rating')
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: const Text('OK'),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  _formKey.currentState!.reset();
-                                },
-                              ),
-                            ],
-                          );
-                        },
+                      // Kirim ke Django dan tunggu respons
+                      // TODO: Ganti URL dan jangan lupa tambahkan trailing slash (/) di akhir URL!
+                      final response = await request.postJson(
+                        "http://127.0.0.1:8000/create-flutter/",
+                        jsonEncode(<String, String>{
+                          'name': _name,
+                          'price': _price.toString(),
+                          'description': _description,
+                          'icecreamrating': _icecreamrating.toString()
+                        }),
                       );
+                      if (context.mounted) {
+                        if (response['status'] == 'success') {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                            content: Text("Produk baru berhasil disimpan!"),
+                          ));
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => MyHomePage()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(const SnackBar(
+                            content:
+                                Text("Terdapat kesalahan, silakan coba lagi."),
+                          ));
+                        }
+                      }
                     }
                   },
                   child: const Text(

@@ -402,3 +402,433 @@ if (item.name == "Tambah Es Krim") {
   Navigator.push(context, MaterialPageRoute(builder: (context) => CreamEntryFormPage()));
 }
 ```
+
+# Tugas 9
+
+### Mengapa kita perlu membuat model untuk pengambilan/pengiriman data JSON
+
+Model diperlukan untuk mendefinisikan struktur data yang akan diterima atau dikirim.
+
+### Fungsi library http
+
+Library http digunakan untuk melakukan request HTTP ke server. Di sini, digunakan untuk mengambil atau mengirim data JSON dari/ke server Django.
+
+### Fungsi CookieRequest dan Kenapa Perlu Dibagikan ke Semua Komponen di Aplikasi Flutter
+
+CookieRequest berfungsi menangani permintaan HTTP yang melibatkan cookie autentikasi dan menjaga status login user. Perlu dibagikan ke semua komponen aplikasi agar seluruh aplikasi dapat mengakses session dan cookie yang sama.
+
+### Mekanisme Pengiriman Data dari Input hingga Tampil pada Flutter
+
+1. User mengisi form di Flutter.
+2. Data dikirim ke server Django menggunakan request.
+3. Django memproses data dan mengembalikan respons (biasanya JSON).
+4. Data yang diterima diparsing menjadi objek menggunakan model.
+5. Data ditampilkan di Flutter melalui widget seperti FutureBuilder atau ListView.
+
+## Langkah Implementasi (Tugas 9)
+
+1. Mengimplementasikan Autentikasi Akun pada Proyek Flutter
+
+Pada proyek Django yang sudah dibuat sebelumnya, buat app baru bernama authentication. Lalu tambahkan view untuk register:
+
+```
+@csrf_exempt
+def register(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data['username']
+        password1 = data['password1']
+        password2 = data['password2']
+
+        if password1 != password2:
+            return JsonResponse({"status": False, "message": "Passwords do not match."}, status=400)
+
+        if User.objects.filter(username=username).exists
+```
+
+Tambahkan routenya untuk register:
+
+```
+from authentication.views import register
+
+urlpatterns = [
+    path('register/', register, name='register'),
+]
+
+```
+
+Buat berkas register.dart pada folder screens/ dan gunakan pbp_django_auth untuk mengirim data ke endpoint registrasi:
+
+```
+ElevatedButton(
+  onPressed: () async {
+    String username = _usernameController.text;
+    String password1 = _passwordController.text;
+    String password2 = _confirmPasswordController.text;
+
+  // UNTUK RETRIEVE PRODUK
+    final response = await request.postJson(
+        "http://127.0.0.1:8000/auth/register/",
+        jsonEncode({
+          "username": username,
+          "password1": password1,
+          "password2": password2,
+        }));
+
+    if (response['status'] == 'success') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registrasi berhasil!')),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'])),
+      );
+    }
+  },
+  child: const Text('Register'),
+)
+```
+
+Tambahkan view baru untuk login pada authentication/views.py:
+
+```
+@csrf_exempt
+def login(request):
+    username = request.POST['username']
+    password = request.POST['password']
+    user = authenticate(username=username, password=password)
+    if user is not None and user.is_active:
+        auth_login(request, user)
+        return JsonResponse({"status": "success", "message": "Login sukses!"}, status=200)
+    return JsonResponse({"status": "error", "message": "Login gagal!"}, status=401)
+```
+
+Jangan lupa untuk tambahkan URL login pada authentication/urls.py:
+
+```
+from authentication.views import login
+
+urlpatterns = [
+    path('login/', login, name='login'),
+]
+```
+
+Buat berkas login.dart dan isi dengan kode:
+
+```
+ElevatedButton(
+  onPressed: () async {
+    String username = _usernameController.text;
+    String password = _passwordController.text;
+
+    final response = await request.login("http://127.0.0.1:8000/auth/login/", {
+      'username': username,
+      'password': password,
+    });
+
+    if (request.loggedIn) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal!')),
+      );
+    }
+  },
+  child: const Text('Login'),
+)
+
+```
+
+2. Mengintegrasikan Autentikasi Django dengan Proyek Flutter
+
+Gunakan package pbp_django_auth untuk menangani login dan request lain yang membutuhkan autentikasi cookie:
+
+```
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Provider(
+      create: (_) => CookieRequest(),
+      child: MaterialApp(
+        home: LoginPage(),
+      ),
+    );
+  }
+}
+```
+
+3. Membuat Model Kustom sesuai pada Aplikasi Django
+
+Pada website Quicktype, ambil json model Django dan ubahlah menjadi model untuk flutter, sehingga pada models/bing_entry.dart menjadi:
+
+```
+// To parse this JSON data, do
+//
+//     final product = productFromJson(jsonString);
+
+import 'dart:convert';
+
+List<Product> productFromJson(String str) =>
+    List<Product>.from(json.decode(str).map((x) => Product.fromJson(x)));
+
+String productToJson(List<Product> data) =>
+    json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
+class Product {
+  String model;
+  String pk;
+  Fields fields;
+
+  Product({
+    required this.model,
+    required this.pk,
+    required this.fields,
+  });
+
+  factory Product.fromJson(Map<String, dynamic> json) => Product(
+        model: json["model"],
+        pk: json["pk"],
+        fields: Fields.fromJson(json["fields"]),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "model": model,
+        "pk": pk,
+        "fields": fields.toJson(),
+      };
+}
+
+class Fields {
+  int user;
+  String name;
+  int price;
+  String description;
+  int icecreamrating;
+
+  Fields({
+    required this.user,
+    required this.name,
+    required this.price,
+    required this.description,
+    required this.icecreamrating,
+  });
+
+  factory Fields.fromJson(Map<String, dynamic> json) => Fields(
+        user: json["user"],
+        name: json["name"],
+        price: json["price"],
+        description: json["description"],
+        icecreamrating: json["icecreamrating"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "user": user,
+        "name": name,
+        "price": price,
+        "description": description,
+        "icecreamrating": icecreamrating,
+      };
+}
+
+```
+
+4. Membuat Halaman Daftar Item dari Endpoint JSON
+
+Dafter item sudah terfilter sesuai dari Django jadi yang akan diambil hanya produk-produk yang terkait dengan user tersebut.
+Buat berkas screens/list_bingentry untuk menampilkan dafftar item, dengan kodenya:
+
+```
+import 'package:flutter/material.dart';
+import 'package:pbp_django_auth/pbp_django_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:toko_bing_chilling/models/bing_entry.dart';
+import 'package:toko_bing_chilling/widgets/left_drawer.dart';
+
+class BingEntryPage extends StatefulWidget {
+  const BingEntryPage({super.key});
+
+  @override
+  State<BingEntryPage> createState() => _BingEntryPageState();
+}
+
+class _BingEntryPageState extends State<BingEntryPage> {
+  Future<List<Product>> fetchBing(CookieRequest request) async {
+    final response = await request.get('http://127.0.0.1:8000/json/');
+
+    // Melakukan decode response menjadi bentuk json
+    var data = response;
+
+    List<Product> listProduct = [];
+    for (var d in data) {
+      if (d != null) {
+        listProduct.add(Product.fromJson(d));
+      }
+    }
+    return listProduct;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final request = context.watch<CookieRequest>();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Products List'),
+      ),
+      drawer: const LeftDrawer(),
+      body: FutureBuilder(
+        future: fetchBing(request),
+        builder: (context, AsyncSnapshot snapshot) {
+          if (snapshot.data == null) {
+            return const Center(child: CircularProgressIndicator());
+          } else {
+            if (!snapshot.hasData) {
+              return const Column(
+                children: [
+                  Text(
+                    'Belum product.',
+                    style: TextStyle(fontSize: 20, color: Color(0xff59A5D8)),
+                  ),
+                  SizedBox(height: 8),
+                ],
+              );
+            } else {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (_, index) => Container(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Nama: "),
+                      Text(
+                        "${snapshot.data![index].fields.name}",
+                        style: const TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text("Harga:"),
+                      Text("${snapshot.data![index].fields.price}"),
+                      const SizedBox(height: 10),
+                      Text("Deskripsi:"),
+                      Text("${snapshot.data![index].fields.description}"),
+                      Text("Rating:"),
+                      const SizedBox(height: 10),
+                      Text("${snapshot.data![index].fields.icecreamrating}")
+                    ],
+                  ),
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+}
+
+```
+
+5. Menunjukkan Halaman Detail Produk pada List Produk
+
+Buat berkas baru screens/product_detail.dart, dengan kode sebagai berikut:
+
+```
+import 'package:flutter/material.dart';
+import 'package:toko_bing_chilling/models/bing_entry.dart';
+
+class ProductDetailPage extends StatelessWidget {
+  final Product product; // This will hold the selected product
+
+  const ProductDetailPage({super.key, required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title:
+            Text(product.fields.name), // Show the product name on the app bar
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Name: ${product.fields.name}",
+              style:
+                  const TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text("Price: ${product.fields.price}"),
+            const SizedBox(height: 10),
+            Text("Description: ${product.fields.description}"),
+            const SizedBox(height: 10),
+            Text("Rating: ${product.fields.icecreamrating}"),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+```
+
+Lalu, modify ListView.builder pada list_bingentry.dart untuk menerima gesture tap dan membawa user ke halaman detail product.
+
+```
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (_, index) {
+                var product = snapshot.data![index];
+                return GestureDetector(
+                  onTap: () {
+                    // Navigate to the ProductDetailPage when tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailPage(
+                          product: product,  // Pass the selected product
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Nama: "),
+                        Text(
+                          "${product.fields.name}",
+                          style: const TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text("Harga: ${product.fields.price}"),
+                        const SizedBox(height: 10),
+                        Text("Deskripsi: ${product.fields.description}"),
+                        Text("Rating: ${product.fields.icecreamrating}")
+                      ],
+                    ),
+                  ),
+                );
+```
