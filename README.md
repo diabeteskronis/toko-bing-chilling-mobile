@@ -425,6 +425,14 @@ CookieRequest berfungsi menangani permintaan HTTP yang melibatkan cookie autenti
 4. Data yang diterima diparsing menjadi objek menggunakan model.
 5. Data ditampilkan di Flutter melalui widget seperti FutureBuilder atau ListView.
 
+### Mekanisme Autentikasi (login, register, logout)
+
+1. Login: User mengirimkan username dan password melalui form login di Flutter. Data ini diteruskan ke Django melalui request POST. Django memverifikasi kredensial dan mengembalikan respons sukses atau gagal, beserta status login.
+
+2. Register: User mengisi form registrasi dengan username dan password. Data dikirimkan ke Django. Jika valid, Django membuat akun baru dan mengirimkan respons sukses.
+
+3. Logout: Saat user menekan tombol logout, Flutter mengirimkan request ke Django untuk menghentikan sesi aktif. Django menghapus session dan mengirimkan respons sukses, yang menandakan user telah logout.
+
 ## Langkah Implementasi (Tugas 9)
 
 1. Mengimplementasikan Autentikasi Akun pada Proyek Flutter
